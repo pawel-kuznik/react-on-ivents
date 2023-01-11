@@ -1,0 +1,62 @@
+{
+  "name": "react-on-ivents",
+  "version": "1.0.0",
+  "description": "",
+  "scripts": {
+    "build": "rollup -c",
+    "test": "npm run installPeerDepsAsDev && react-scripts test",
+    "installPeerDepsAsDev": "npm install --save-dev react react-dom",
+    "removePeerDeps": "rm -rf node_modules/react node_modules/react-dom",
+    "prepare": "npm run removePeerDeps && npm run build"
+  },
+  "author": "Paweł Kuźnik <pawel.kuznik@gmail.com>",
+  "license": "ISC",
+  "peerDependencies": {
+    "react": "^18.0.0",
+    "react-dom": "^18.0.0",
+    "@pawel-kuznik/iventy": "^3.0.0"
+  },
+  "main": "build/index.js",
+  "module": "build/index.esm.js",
+  "files": [
+    "build"
+  ],
+  "devDependencies": {
+    "@rollup/plugin-commonjs": "^21.0.1",
+    "@rollup/plugin-node-resolve": "^13.1.2",
+    "@rollup/plugin-typescript": "^8.3.0",
+    "@testing-library/jest-dom": "^5.16.4",
+    "@testing-library/react": "^13.3.0",
+    "@types/jest": "^27.5.2",
+    "@types/node": "^16.11.41",
+    "@types/react": "^18.0.14",
+    "@types/react-dom": "^18.0.5",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-scripts": "^5.0.1",
+    "recursive-copy": "^2.0.13",
+    "rollup-plugin-exclude-dependencies-from-bundle": "^1.1.22",
+    "rollup-plugin-peer-deps-external": "^2.2.4",
+    "rollup-plugin-postcss": "^4.0.2",
+    "typescript": "^4.7.4",
+    "webpack": "^5.65.0"
+  },
+  "eslintConfig": {
+    "extends": [
+      "react-app",
+      "react-app/jest"
+    ]
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  }
+}
