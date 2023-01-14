@@ -2,7 +2,6 @@ import { AbortablePromise } from "@pawel-kuznik/blindsight";
 
 export type ReaderFetch<TReturn, TParam> = (param: TParam) => Promise<TReturn>;
 
-
 export interface ReaderOptions<TParam> {
 
     /**
