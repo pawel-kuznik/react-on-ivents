@@ -60,7 +60,7 @@ export class Reader<TReturn, TParam = void> {
 
         this.start(param);
 
-        if (this._result === undefined) throw this._promise;
+        if (this._result === undefined) throw this._promise?.then();
 
         return this._result;
     }
@@ -78,12 +78,13 @@ export class Reader<TReturn, TParam = void> {
 
             this._param = param;
 
-            this._promise = new AbortablePromise(this._fetch(param));
-            this._promise.then(result => {
+            this._promise = new AbortablePromise(this._fetch(param).then(result => {
                 this._result = result;
+                return result;
             }, reason => {
                 this._error = reason;
-            });
+                throw reason;
+            }));
         }
 
         return this._promise.then(undefined, () => { return undefined; });
