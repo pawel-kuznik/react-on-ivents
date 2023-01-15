@@ -1,6 +1,6 @@
 {
-  "name": "react-on-ivents",
-  "version": "1.0.0",
+  "name": "@pawel-kuznik/react-on-ivents",
+  "version": "1.0.1",
   "description": "",
   "scripts": {
     "build": "rollup -c",
