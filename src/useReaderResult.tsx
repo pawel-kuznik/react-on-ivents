@@ -4,6 +4,9 @@ import { useEventCallback } from "./useEventCallback";
 
 /**
  *  A hook that allows waiting for reader data and using it directly.
+ *  The hook will force a component reload every time the result changes.
+ *  However, the hook will not force reload when the reader enters
+ *  a loading state after first successful render.
  */
 function useReaderResult<TResult>(reader: Reader<TResult, void>) : TResult;
 function useReaderResult<TResult, TParam>(reader: Reader<TResult, TParam>, param: TParam) : TResult;
