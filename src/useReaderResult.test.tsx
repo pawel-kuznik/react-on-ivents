@@ -31,4 +31,20 @@ describe('useReaderResult()', () => {
 
         await waitFor(() => expect(result.result.current).toEqual(42));
     });
+    it('should tell the reload when the reader reloads', async () => {
+
+        let a = 1;
+
+        const reader = new Reader<number>(() => Promise.resolve(a));
+        const result = await act(() => renderHook(() => useReaderResult(reader), {
+            wrapper: Wrapper
+        }));
+
+        await waitFor(() => expect(result.result.current).toEqual(1));
+
+        a = 2;
+        reader.reload();
+
+        await waitFor(() => expect(result.result.current).toEqual(2));
+    });
 });
