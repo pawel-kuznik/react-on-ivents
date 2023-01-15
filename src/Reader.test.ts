@@ -64,4 +64,39 @@ describe('Reader', () => {
         await reader.start(42);
         expect(() => reader.read(16)).toThrow();
     });
+    it('should trigger start when starts loading data', done => {
+
+        const reader = new Reader<number>(() => Promise.resolve(42));
+        reader.handle('start', () => done());
+
+        reader.start();
+    });
+    it('should trigger done when it is ready to deliver data', done => {
+
+        const reader = new Reader<number>(() => Promise.resolve(42));
+        reader.handle('done', () => done());
+
+        reader.start();
+    });
+    it('should trigger error when it is getting an error', async () => {
+
+        const reader = new Reader<number>(() => Promise.reject(Error('expected')));
+        const fn = jest.fn();
+        reader.handle('error', () => fn());
+
+        try {
+            await reader.start();
+        }
+
+        catch(error: any) {
+            expect(fn).toBeCalled();
+        }
+    });
+    it('should trigger reset when it is forced to reset', done => {
+
+        const reader = new Reader<number>(() => Promise.reject(Error('expected')));
+        reader.handle('reset', () => done());
+
+        reader.reset();
+    });
 });

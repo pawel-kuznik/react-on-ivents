@@ -1,4 +1,6 @@
 import { AbortablePromise } from "@pawel-kuznik/blindsight";
+import { Emitter, EmitterLike, EventHandler } from "@pawel-kuznik/iventy";
+import { EventHandlerUninstaller } from "@pawel-kuznik/iventy/build/lib/Channel";
 
 export type ReaderFetch<TReturn, TParam> = (param: TParam) => Promise<TReturn>;
 
@@ -26,8 +28,19 @@ interface ReaderSettings<TParam> {
  *  A Reader is a special object that allows reading from an async source
  *  and then present the data in a sync way. This approach is more suitable
  *  in react code than dealing with promises and async code in general.
+ * 
+ *  This class, in addition to providing data, also emits events for when
+ *  the reader enters particular phases:
+ * 
+ *  @event start    - this event triggers when reader starts loading data
+ *  @event done     - this event triggers when reader loads data without an error.
+ *  @event error    - this event triggers when reader receives and error from 
+ *                  the fetch function.
+ *  @event reset    - this event triggers when reader resets its internal state.
  */
-export class Reader<TReturn, TParam = void> {
+export class Reader<TReturn, TParam = void> implements EmitterLike {
+
+    private _emitter: Emitter = new Emitter();
  
     private _result: TReturn | undefined = undefined;
     private _promise: AbortablePromise<TReturn> | undefined;
@@ -76,13 +89,17 @@ export class Reader<TReturn, TParam = void> {
             // if we need to redo the read we need to reset the whole object as we will have different data.
             this.reset();
 
+            this._emitter.trigger('start');
+
             this._param = param;
 
             this._promise = new AbortablePromise(this._fetch(param).then(result => {
                 this._result = result;
+                this._emitter.trigger('done');
                 return result;
             }, reason => {
                 this._error = reason;
+                this._emitter.trigger('error');
                 throw reason;
             }));
         }
@@ -100,6 +117,8 @@ export class Reader<TReturn, TParam = void> {
         this._error = undefined;
         this._param = undefined;
         this._result = undefined;
+
+        this._emitter.trigger('reset');
     }
 
     /**
@@ -110,5 +129,20 @@ export class Reader<TReturn, TParam = void> {
 
         this.reset();
         return this.start(param);
+    }
+
+    
+    // Methods required by EmitterLike interface
+
+    handle(name: string, callback: EventHandler): EventHandlerUninstaller {
+        return this._emitter.handle(name, callback);
+    }
+    on(name: string, callback: EventHandler): EmitterLike {
+        this._emitter.on(name, callback);
+        return this;
+    }
+    off(name: string, callback: EventHandler | null): EmitterLike {
+        this._emitter.off(name, callback);
+        return this;
     }
 };
