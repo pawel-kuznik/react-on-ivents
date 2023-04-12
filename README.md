@@ -12,3 +12,9 @@ of the visual code.
 
 Additionally, this library provides a `Reader` class that turns async reading process into
 a sync reading process with support of `<Suspense>` tag.
+
+### Working in signals
+
+`iventy` library introduces a signal concept. It's a mechanism to give someone a way to tell
+you (or someone else) something. It's a one-direction communication which means that the input
+source can be protected and still allow the listening to a signal on the other end.
