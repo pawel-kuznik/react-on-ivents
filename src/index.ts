@@ -4,3 +4,4 @@ export * from "./useEventCallback";
 export * from "./useReaderReset";
 export * from "./useReader";
 export * from "./useSignal";
+export * from "./useSignalResult";
