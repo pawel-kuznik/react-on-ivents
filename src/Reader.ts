@@ -1,6 +1,7 @@
 import { AbortablePromise } from "@pawel-kuznik/blindsight";
 import { Emitter, EmitterLike, EventHandler, Signal } from "@pawel-kuznik/iventy";
 import { EventHandlerUninstaller } from "@pawel-kuznik/iventy/build/lib/Channel";
+import { ReaderStream } from "./ReaderStream";
 
 export type ReaderFetch<TReturn, TParam> = (param: TParam) => Promise<TReturn>;
 
@@ -31,6 +32,19 @@ interface ReaderSettings<TParam> {
     reloadSignal?: Signal<TParam>;
 };
 
+class DefaultReaderStream<TReturn, TParams> extends ReaderStream<TReturn, TParams> {
+
+    private _fetch: ReaderFetch<TReturn, TParams>;
+
+    constructor(fetch: ReaderFetch<TReturn, TParams>) {
+        super();
+        this._fetch = fetch;
+    }
+
+    fetch(params: TParams): Promise<TReturn> {
+        return this._fetch(params);
+    }
+};
 /**
  *  A Reader is a special object that allows reading from an async source
  *  and then present the data in a sync way. This approach is more suitable
@@ -51,7 +65,7 @@ export class Reader<TReturn, TParam = void> implements EmitterLike {
  
     private _result: TReturn | undefined = undefined;
     private _promise: AbortablePromise<TReturn> | undefined;
-    private _fetch: ReaderFetch<TReturn, TParam>;
+    private _stream: ReaderStream<TReturn, TParam>;
     private _param: TParam | undefined = undefined;
     private _error: any;
 
@@ -62,7 +76,7 @@ export class Reader<TReturn, TParam = void> implements EmitterLike {
     get result() : TReturn|undefined { return this._result; }
     get error() : any { return this._error; }
 
-    constructor(fetch: ReaderFetch<TReturn, TParam>, options: ReaderOptions<TParam> = { }) {
+    constructor(fetch: ReaderFetch<TReturn, TParam>|ReaderStream<TReturn, TParam>, options: ReaderOptions<TParam> = { }) {
 
         this._settings = {
             // set default settings
@@ -72,7 +86,18 @@ export class Reader<TReturn, TParam = void> implements EmitterLike {
             ...options
         };
 
-        this._fetch = fetch;
+        this._stream = fetch instanceof ReaderStream ? fetch : new DefaultReaderStream(fetch);
+
+        this._stream.on('update', event => {
+
+            const params = event.data.params as TParam;
+            const result = event.data.result as TReturn;
+
+            this._error = undefined;
+            this._param = params;
+            this._result = result;
+            this._emitter.trigger('done');
+        });
 
         if (this._settings.reloadSignal) {
             this._reloadUninstaller = this._settings.reloadSignal.observe(params => {
@@ -108,7 +133,7 @@ export class Reader<TReturn, TParam = void> implements EmitterLike {
 
             this._param = param;
 
-            this._promise = this.wrapPromise(this._fetch(param));
+            this._promise = this.wrapPromise(this._stream.fetch(param));
         }
 
         return this._promise.then(undefined, () => { return undefined; });

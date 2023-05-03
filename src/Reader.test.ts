@@ -1,5 +1,8 @@
 import { SignalController } from "@pawel-kuznik/iventy";
 import { Reader } from "./Reader";
+import { ReaderStream } from "./ReaderStream";
+import { read } from "fs";
+import exp from "constants";
 
 describe('Reader', () => {
 
@@ -113,5 +116,25 @@ describe('Reader', () => {
 
             if (reader.result == 16) done(); 
         });
+    });
+    it('should call done event when event stream updated', done => {
+
+        class TestStream extends ReaderStream<number, number> {
+
+            fetch(params: number): Promise<number> {
+                return Promise.resolve(params);
+            }
+        }
+
+        const stream = new TestStream();
+        const reader = new Reader<number, number>(stream);
+
+        reader.on('done', () => {
+
+            expect(reader.result).toEqual(35);
+            if (reader.result === 35) done();
+        });
+
+        stream.update(35, 35);
     });
 });
