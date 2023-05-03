@@ -1,3 +1,4 @@
+import { SignalController } from "@pawel-kuznik/iventy";
 import { Reader } from "./Reader";
 
 describe('Reader', () => {
@@ -98,5 +99,19 @@ describe('Reader', () => {
         reader.handle('reset', () => done());
 
         reader.reset();
+    });
+    it('should reload when reload signal demands it', done => {
+
+        const controller = new SignalController<number>();
+
+        const reader = new Reader<number, number>((param: number) => Promise.resolve(param), { reloadSignal: controller.signal });
+        reader.start(42);
+
+        controller.activate(16);
+
+        reader.on('done', event => {
+
+            if (reader.result == 16) done(); 
+        });
     });
 });

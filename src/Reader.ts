@@ -1,5 +1,5 @@
 import { AbortablePromise } from "@pawel-kuznik/blindsight";
-import { Emitter, EmitterLike, EventHandler } from "@pawel-kuznik/iventy";
+import { Emitter, EmitterLike, EventHandler, Signal } from "@pawel-kuznik/iventy";
 import { EventHandlerUninstaller } from "@pawel-kuznik/iventy/build/lib/Channel";
 
 export type ReaderFetch<TReturn, TParam> = (param: TParam) => Promise<TReturn>;
@@ -15,6 +15,12 @@ export interface ReaderOptions<TParam> {
      *  false - means params are different.
      */
     paramsComparator?: (paramA: TParam, paramB: TParam) => boolean;
+
+    /**
+     *  A signal that can be passed to the reader that will internally force
+     *  the reader to reload when the signal activates. 
+     */
+    reloadSignal?: Signal<TParam>;
 };
 
 /**
@@ -22,6 +28,7 @@ export interface ReaderOptions<TParam> {
  */
 interface ReaderSettings<TParam> {
     paramsComparator: (paramA: TParam, paramB: TParam) => boolean;
+    reloadSignal?: Signal<TParam>;
 };
 
 /**
@@ -50,6 +57,8 @@ export class Reader<TReturn, TParam = void> implements EmitterLike {
 
     private _settings: ReaderSettings<TParam>;
 
+    private _reloadUninstaller: () => void = () => { };
+
     get result() : TReturn|undefined { return this._result; }
     get error() : any { return this._error; }
 
@@ -64,6 +73,12 @@ export class Reader<TReturn, TParam = void> implements EmitterLike {
         };
 
         this._fetch = fetch;
+
+        if (this._settings.reloadSignal) {
+            this._reloadUninstaller = this._settings.reloadSignal.observe(params => {
+                this.reload(params);
+            });
+        }
     }
 
     /**
@@ -93,15 +108,7 @@ export class Reader<TReturn, TParam = void> implements EmitterLike {
 
             this._param = param;
 
-            this._promise = new AbortablePromise(this._fetch(param).then(result => {
-                this._result = result;
-                this._emitter.trigger('done');
-                return result;
-            }, reason => {
-                this._error = reason;
-                this._emitter.trigger('error');
-                throw reason;
-            }));
+            this._promise = this.wrapPromise(this._fetch(param));
         }
 
         return this._promise.then(undefined, () => { return undefined; });
@@ -129,6 +136,33 @@ export class Reader<TReturn, TParam = void> implements EmitterLike {
 
         this.reset();
         return this.start(param);
+    }
+
+    /**
+     *  Dispose the resources reader allocated.
+     */
+    dispose() {
+
+        if (this._promise) this._promise.abort();
+        this._promise = undefined;
+        this._error = undefined;
+        this._param = undefined;
+        this._result = undefined;
+
+        this._reloadUninstaller();
+    }
+
+    private wrapPromise(promise: Promise<TReturn>) : AbortablePromise<TReturn> {
+
+        return new AbortablePromise(promise.then(result => {
+            this._result = result;
+            this._emitter.trigger('done');
+            return result;
+        }, reason => {
+            this._error = reason;
+            this._emitter.trigger('error');
+            throw reason;
+        }));
     }
 
     
