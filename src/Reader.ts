@@ -45,6 +45,7 @@ class DefaultReaderStream<TReturn, TParams> extends ReaderStream<TReturn, TParam
         return this._fetch(params);
     }
 };
+
 /**
  *  A Reader is a special object that allows reading from an async source
  *  and then present the data in a sync way. This approach is more suitable
